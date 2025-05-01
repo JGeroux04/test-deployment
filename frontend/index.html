@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotion Recognition | FaceAI</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <ul>
+        <li><a href="index.html"><i class="fas fa-smile-beam"></i> Emotion Detection</a></li>
+        <li><a href="analyze.html"><i class="fas fa-user-check"></i> Age/Gender Analysis</a></li>
+        <li><a href="demo.html"><i class="fas fa-users"></i> Face Comparison</a></li>
+        <li><a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        <li><a href="register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+        <li><a href="profile.html"><i class="fas fa-id-card"></i> Profile</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-header">
+    <h1>Real-Time Emotion Detection</h1>
+  </div>
+
+  <div class="container">
+    <div class="webcam-container">
+      <video id="webcam" width="640" height="480" autoplay playsinline></video>
+      <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+      <div id="status" class="status-message"><i class="fas fa-spinner fa-spin"></i> Initializing camera...</div>
+    </div>
+
+    <div class="controls flex justify-center gap-2 mt-2">
+      <button id="captureBtn" disabled><i class="fas fa-play"></i> Start Detection</button>
+      <button id="stopBtn" disabled><i class="fas fa-stop"></i> Stop Detection</button>
+    </div>
+
+    <div class="results-container mt-2">
+      <div class="result-panel">
+        <div class="result-header">
+          <h2><i class="fas fa-brain"></i> Detection Results</h2>
+        </div>
+        <div class="result-body">
+          <div class="current-emotion">
+            <span class="result-label">Primary Emotion:</span>
+            <span id="emotion" class="emotion-indicator">Waiting...</span>
+          </div>
+          <div class="confidence-level">
+            <span class="result-label">Confidence:</span>
+            <span id="confidence">---</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-container mt-2">
+        <h3>Emotion Distribution</h3>
+        <canvas id="emotionChart"></canvas>
+      </div>
+      
+      <div class="details-container mt-2">
+        <h3>Detailed Analysis</h3>
+        <div id="details" class="details-content">No analysis available yet.</div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPage = window.location.pathname.split('/').pop();
+      const navLinks = document.querySelectorAll('.navbar a');
+      navLinks.forEach(link => {
+        const linkPage = link.getAttribute('href');
+        if (linkPage === currentPage) {
+          link.classList.add('active');
+        }
+      });
+
+      const updateEmotionIndicator = (emotion) => {
+        const emotionElement = document.getElementById('emotion');
+        if (emotionElement) {
+          emotionElement.className = 'emotion-indicator';
+          
+          if (emotion && emotion !== '---' && emotion !== 'Waiting...') {
+            emotionElement.classList.add(`emotion-${emotion.toLowerCase()}`);
+          }
+        }
+      };
+
+      const originalEmotionSetter = Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype, 'textContent'
+      ).set;
+
+      const emotionElement = document.getElementById('emotion');
+      
+      if (emotionElement) {
+        Object.defineProperty(emotionElement, 'textContent', {
+          set(value) {
+            originalEmotionSetter.call(this, value);
+            updateEmotionIndicator(value);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

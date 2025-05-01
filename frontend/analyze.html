@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html"><i class="fas fa-smile-beam"></i> Emotion Detection</a></li>
+            <li><a href="analyze.html" class="active"><i class="fas fa-user-check"></i> Age/Gender Analysis</a></li>
+            <li><a href="demo.html"><i class="fas fa-users"></i> Face Comparison</a></li>
+            <li><a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+            <li><a href="register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+            <li><a href="profile.html"><i class="fas fa-id-card"></i> Profile</a></li>
+        </ul>
+    </nav>
+    <hr class="nav-divider">
+
+    <h1>Analyze Your Face</h1>
+
+    <div class="container">
+        <div class="file-input-container">
+            <input type="file" id="uploadInput" accept="image/*">
+            <label for="uploadInput" class="file-input-label"><i class="fas fa-upload"></i> Upload Photo</label>
+            <div id="fileNameDisplay" class="file-name"></div>
+        </div>
+        
+        <button id="clearUploadBtn">Clear Uploaded File</button><br><br>
+
+        <video id="webcam" width="320" height="240" autoplay playsinline style="border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;"></video><br>
+        <button id="captureBtn">Capture from Webcam</button>
+        <button id="clearCaptureBtn">Clear Webcam Capture</button><br><br>
+
+        <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+        <button id="analyzeBtn">Analyze Photo</button>
+
+        <div id="result" style="margin-top:20px;">
+            <div>Age: <span id="age">---</span></div>
+            <div>Gender: <span id="gender">---</span></div>
+            <div>Race: <span id="race">---</span></div>
+        </div>
+    </div>
+
+    <script>
+    let capturedImage = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadInput = document.getElementById('uploadInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const clearUploadBtn = document.getElementById('clearUploadBtn');
+        const clearCaptureBtn = document.getElementById('clearCaptureBtn');
+        const canvas = document.getElementById('canvas');
+        const webcam = document.getElementById('webcam');
+        
+        if (uploadInput) {
+            uploadInput.addEventListener('change', function() {
+                const fileName = this.files[0] ? this.files[0].name : '';
+                document.getElementById('fileNameDisplay').textContent = fileName;
+            });
+        }
+
+        if (webcam && !webcam.srcObject) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    webcam.srcObject = stream;
+                })
+                .catch((err) => {
+                    console.error("Error accessing webcam in analyze.html:", err);
+                });
+        }
+
+        if (captureBtn && canvas && webcam) {
+            captureBtn.addEventListener('click', () => {
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+                capturedImage = canvas.toDataURL('image/jpeg');
+                if (uploadInput) uploadInput.value = '';
+                const fileNameDisplay = document.getElementById('fileNameDisplay');
+                if (fileNameDisplay) fileNameDisplay.textContent = '';
+                alert("Captured from webcam!");
+            });
+        }
+
+        if (clearUploadBtn) {
+            clearUploadBtn.addEventListener('click', () => {
+                if (uploadInput) uploadInput.value = '';
+                const fileNameDisplay = document.getElementById('fileNameDisplay');
+                if (fileNameDisplay) fileNameDisplay.textContent = '';
+                alert("Uploaded file cleared.");
+            });
+        }
+
+        if (clearCaptureBtn) {
+            clearCaptureBtn.addEventListener('click', () => {
+                capturedImage = null;
+                alert("Webcam capture cleared.");
+            });
+        }
+
+        if (uploadInput) {
+            uploadInput.addEventListener('change', () => {
+                if (uploadInput.files.length > 0) {
+                    capturedImage = null;
+                }
+            });
+        }
+
+        if (analyzeBtn) {
+            analyzeBtn.addEventListener('click', async () => {
+                if (capturedImage) {
+                    await sendImageForAnalysis(capturedImage);
+                } else if (uploadInput && uploadInput.files.length > 0) {
+                    const file = uploadInput.files[0];
+                    const reader = new FileReader();
+                    reader.onloadend = async function () {
+                        await sendImageForAnalysis(reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Please upload a photo or capture from webcam first.");
+                }
+            });
+        }
+    });
+
+    async function sendImageForAnalysis(imageData) {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('age').textContent = data.age;
+                document.getElementById('gender').textContent = data.gender;
+                document.getElementById('race').textContent = data.race;
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error("Error analyzing image:", error);
+            alert("Failed to analyze image.");
+        }
+    }
+    </script>
+</body>
+</html>

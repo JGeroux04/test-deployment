@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Face Comparison Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    video, canvas, img {
+      border: 1px solid #ccc;
+      margin: 5px;
+    }
+    .container {
+      margin-bottom: 20px;
+    }
+    code {
+      display: block;
+      background: #f5f5f5;
+      padding: 10px;
+      border-left: 4px solid #888;
+      white-space: pre-wrap;
+      margin-bottom: 15px;
+    }
+    pre#result {
+      background: #fff;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .button-center {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .file-label {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-block;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .file-label:hover {
+      background: linear-gradient(135deg, #2980b9 0%, #2c3e50 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .comparison-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .image-container {
+      flex: 1;
+      min-width: 320px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .compare-section {
+      width: 100%;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <ul>
+        <li><a href="index.html" class="active"><i class="fas fa-smile-beam"></i> Emotion Detection</a></li>
+        <li><a href="analyze.html"><i class="fas fa-user-check"></i> Age/Gender Analysis</a></li>
+        <li><a href="demo.html"><i class="fas fa-users"></i> Face Comparison</a></li>
+        <li><a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        <li><a href="register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+        <li><a href="profile.html"><i class="fas fa-id-card"></i> Profile</a></li>
+    </ul>
+  </nav>
+<hr class="nav-divider">
+
+<h1>Face Comparison Demo</h1>
+
+<div class="comparison-container">
+  <div class="image-container">
+    <h2>Image 1</h2>
+    <div class="input-group">
+      <label for="file1" class="file-label">Choose Image 1</label>
+      <input type="file" id="file1" accept="image/*">
+      <button onclick="clearImage(1)">Clear Image 1</button>
+    </div>
+    <video id="video1" width="320" height="240" autoplay playsinline></video>
+    <div class="button-center">
+      <button onclick="captureFromWebcam(1)">Capture from Webcam 1</button>
+    </div>
+  </div>
+
+  <div class="image-container">
+    <h2>Image 2</h2>
+    <div class="input-group">
+      <label for="file2" class="file-label">Choose Image 2</label>
+      <input type="file" id="file2" accept="image/*">
+      <button onclick="clearImage(2)">Clear Image 2</button>
+    </div>
+    <video id="video2" width="320" height="240" autoplay playsinline></video>
+    <div class="button-center">
+      <button onclick="captureFromWebcam(2)">Capture from Webcam 2</button>
+    </div>
+  </div>
+</div>
+
+<div class="compare-section">
+  <button onclick="compareFaces()">Compare Faces</button>
+
+  <h3>Results:</h3>
+  <pre id="result"><code>No comparison made yet.</code></pre>
+</div>
+
+<script>
+  let img1 = null, img2 = null;
+
+  async function startWebcams() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById("video1").srcObject = stream;
+    document.getElementById("video2").srcObject = stream;
+  }
+
+  function captureFromWebcam(num) {
+    const video = document.getElementById("video" + num);
+    const canvas = document.createElement("canvas");
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imgData = canvas.toDataURL("image/jpeg");
+
+    if (num === 1) {
+      img1 = imgData;
+    } else {
+      img2 = imgData;
+    }
+
+    alert(`Captured Image ${num}`);
+  }
+
+  function clearImage(num) {
+    if (num === 1) {
+      img1 = null;
+      document.getElementById("file1").value = '';
+    } else {
+      img2 = null;
+      document.getElementById("file2").value = '';
+    }
+    alert(`Cleared Image ${num}`);
+  }
+
+  document.getElementById('file1').addEventListener('change', function (e) {
+    const reader = new FileReader();
+    reader.onload = () => img1 = reader.result;
+    reader.readAsDataURL(e.target.files[0]);
+  });
+
+  document.getElementById('file2').addEventListener('change', function (e) {
+    const reader = new FileReader();
+    reader.onload = () => img2 = reader.result;
+    reader.readAsDataURL(e.target.files[0]);
+  });
+
+  async function compareFaces() {
+    if (!img1 || !img2) {
+      alert("Please provide both images.");
+      return;
+    }
+
+    document.getElementById("result").innerHTML = "<code>Processing...</code>";
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/demo_compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image1: img1, image2: img2 })
+      });
+
+      const data = await response.json();
+
+      const outputHTML = `
+<code>Base64 Image 1 (first 100 chars):\n${data.base64_sample_img1}</code>
+<code>Base64 Image 2 (first 100 chars):\n${data.base64_sample_img2}</code>
+
+<code>NumPy Array Sample - Image 1:\n${data.array_sample_img1}</code>
+<code>NumPy Array Sample - Image 2:\n${data.array_sample_img2}</code>
+
+<code>DeepFace Results:\n- Similarity Score: ${data.similarity}\n- Confidence Score: ${data.confidence !== null ? data.confidence : "N/A"}\n- Verified Match: ${data.verified ? "Yes" : "No"}</code>
+      `;
+
+      document.getElementById("result").innerHTML = outputHTML;
+    } catch (error) {
+      document.getElementById("result").innerHTML = "<code>Error processing images.</code>";
+    }
+  }
+
+  startWebcams();
+</script>
+</body>
+</html>

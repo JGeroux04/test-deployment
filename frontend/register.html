@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html" class="active"><i class="fas fa-smile-beam"></i> Emotion Detection</a></li>
+            <li><a href="analyze.html"><i class="fas fa-user-check"></i> Age/Gender Analysis</a></li>
+            <li><a href="demo.html"><i class="fas fa-users"></i> Face Comparison</a></li>
+            <li><a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+            <li><a href="register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+            <li><a href="profile.html"><i class="fas fa-id-card"></i> Profile</a></li>
+        </ul>
+      </nav>
+    <hr class="nav-divider">
+
+    <h1>Register</h1>
+
+    <div class="container">
+
+        <h2>Create Account</h2>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Username" required><br>
+            <input type="password" id="password" placeholder="Password" required><br><br>
+
+            <h3>Optional: Upload or Capture Profile Photo</h3>
+
+            <div class="file-input-container">
+                <input type="file" id="profileUpload" accept="image/*">
+                <label for="profileUpload" class="file-input-label"><i class="fas fa-upload"></i> Choose Profile Photo</label>
+                <div id="fileNameDisplay" class="file-name"></div>
+            </div>
+
+            <video id="video" width="320" height="240" autoplay playsinline style="border: 1px solid #ccc; border-radius: 4px;"></video><br>
+            <button id="captureBtn" type="button">Capture from Webcam</button><br><br>
+
+            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+            <button type="submit">Register</button>
+        </form>
+
+    </div>
+
+    <script>
+    let capturedImage = null;
+
+    document.getElementById('profileUpload').addEventListener('change', function() {
+        const fileName = this.files[0] ? this.files[0].name : '';
+        document.getElementById('fileNameDisplay').textContent = fileName;
+    });
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+            document.getElementById('video').srcObject = stream;
+        })
+        .catch((err) => {
+            console.error("Error accessing webcam:", err);
+        });
+
+    document.getElementById('captureBtn').addEventListener('click', () => {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const video = document.getElementById('video');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        capturedImage = canvas.toDataURL('image/jpeg');
+        alert("Captured photo from webcam!");
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const fileInput = document.getElementById('profileUpload');
+
+        let profilePicture = null;
+
+        if (fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onloadend = async function () {
+                profilePicture = reader.result;
+                await registerUser(username, password, profilePicture);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else if (capturedImage) {
+            await registerUser(username, password, capturedImage);
+        } else {
+            await registerUser(username, password, null);
+        }
+    });
+
+    async function registerUser(username, password, profilePicture) {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, profile_picture: profilePicture })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+                window.location.href = "login.html";
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('An error occurred during registration.');
+        }
+    }
+    </script>
+
+</body>
+</html>
